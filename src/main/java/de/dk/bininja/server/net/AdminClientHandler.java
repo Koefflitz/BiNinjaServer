@@ -10,6 +10,7 @@ import de.dk.bininja.net.Base64Connection;
 import de.dk.bininja.net.packet.admin.AdminPacket;
 import de.dk.bininja.net.packet.admin.AdminPacket.AdminPacketType;
 import de.dk.bininja.net.packet.admin.BooleanAnswerPacket;
+import de.dk.bininja.net.packet.admin.ConnectionDetailsPacket;
 import de.dk.bininja.net.packet.admin.CountConnectionsPacket;
 import de.dk.bininja.net.packet.admin.CountConnectionsResultPacket;
 import de.dk.bininja.net.packet.admin.ReadBufferSizePacket;
@@ -45,6 +46,9 @@ public class AdminClientHandler implements ClientHandler, Receiver, ConnectionLi
       case COUNT_CONNECTIONS:
          countConnections((CountConnectionsPacket) packet);
          break;
+      case CONNECTION_DETAILS:
+         getConnectionDetails((ConnectionDetailsPacket) packet);
+         break;
       case READ_BUFFER_SIZE:
          readBufferSize();
          break;
@@ -54,13 +58,12 @@ public class AdminClientHandler implements ClientHandler, Receiver, ConnectionLi
       case SHUTDOWN:
          shutdown();
          break;
-      default:
-         break;
       }
    }
 
    private void setBufferSize(SetBufferSizePacket packet) {
       controller.setBufferSize(packet.getBufferSize());
+      LOGGER.debug("Sending answer that buffer size was set to " + connection.getInetAddress());
       try {
          connection.send(new BooleanAnswerPacket(AdminPacketType.SET_BUFFER_SIZE, true));
       } catch (IOException e) {
@@ -73,6 +76,7 @@ public class AdminClientHandler implements ClientHandler, Receiver, ConnectionLi
 
    private void readBufferSize() {
       int bufferSize = controller.readBufferSize();
+      LOGGER.debug("Sending answer of the buffer size to " + connection.getInetAddress());
       try {
          connection.send(new ReadBufferSizePacket(bufferSize));
       } catch (IOException e) {
@@ -97,6 +101,7 @@ public class AdminClientHandler implements ClientHandler, Receiver, ConnectionLi
          return;
       }
 
+      LOGGER.debug("Sending answer of the connection count to " + connection.getInetAddress());
       try {
          connection.send(new CountConnectionsResultPacket(count));
       } catch (IOException e) {
@@ -104,7 +109,18 @@ public class AdminClientHandler implements ClientHandler, Receiver, ConnectionLi
       }
    }
 
+   private void getConnectionDetails(ConnectionDetailsPacket packet) {
+      packet.setConnectionDetails(controller.getConnectionDetailsOf(packet.getConnectionType()));
+      LOGGER.debug("Sending answer of the connection details to " + connection.getInetAddress());
+      try {
+         connection.send(packet);
+      } catch (IOException e) {
+         LOGGER.error("Could not send answer for readConnectionDetails to admin client " + connection.getInetAddress(), e);
+      }
+   }
+
    private void shutdown() {
+      LOGGER.debug("Sending answer that Im shutting down to " + connection.getInetAddress());
       try {
          connection.send(new BooleanAnswerPacket(AdminPacketType.SHUTDOWN, true));
       } catch (IOException e) {

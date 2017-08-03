@@ -11,9 +11,13 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.dk.bininja.net.ConnectionDetails;
+import de.dk.bininja.net.ConnectionType;
 import de.dk.bininja.server.controller.AdminClientController;
+import de.dk.bininja.server.controller.ClientHandler;
 import de.dk.bininja.server.controller.ClientManager;
 import de.dk.bininja.server.controller.DownloadClientManager;
+import de.dk.util.net.Connection;
 
 public class Server implements ConnectionRequestHandler, AdminClientController {
    private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
@@ -98,8 +102,40 @@ public class Server implements ConnectionRequestHandler, AdminClientController {
    }
 
    @Override
+   public Collection<ConnectionDetails> getConnectionDetailsOf(ConnectionType type) {
+      switch (type) {
+      case ADMIN:
+         return buildConnectionDetailsOf(adminClients, type).collect(Collectors.toList());
+      case CLIENT:
+         return buildConnectionDetailsOf(downloadClients, type).collect(Collectors.toList());
+      case ALL:
+         return Stream.concat(buildConnectionDetailsOf(adminClients, ConnectionType.ADMIN),
+                              buildConnectionDetailsOf(downloadClients, ConnectionType.CLIENT))
+                      .collect(Collectors.toList());
+      }
+      return null;
+   }
+
+   private Stream<ConnectionDetails> buildConnectionDetailsOf(ClientManager<? extends ClientHandler> manager, ConnectionType type) {
+      return manager.getClients()
+                    .stream()
+                    .map(ClientHandler::getConnection)
+                    .map(c -> getDetailsOf(c, type));
+   }
+
+   @Override
    public void shutdown() {
       controller.shutdown();
+   }
+
+   private ConnectionDetails getDetailsOf(Connection connection, ConnectionType type) {
+      String host = connection.getInetAddress()
+                              .getHostName();
+
+      int port = connection.getSocket()
+                           .getPort();
+
+      return new ConnectionDetails(host, port, type);
    }
 
    public synchronized void destroy() throws InterruptedException {
