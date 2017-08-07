@@ -5,6 +5,10 @@ import java.util.Collection;
 import de.dk.bininja.net.ConnectionDetails;
 import de.dk.bininja.net.ConnectionType;
 
+/**
+ * @author David Koettlitz
+ * <br>Erstellt am 07.08.2017
+ */
 public interface AdminClientController {
    public int countAdminConnections();
    public int countDownloadConnections();

@@ -15,6 +15,10 @@ import de.dk.bininja.net.Base64Connection;
 import de.dk.bininja.server.net.Server;
 import de.dk.bininja.server.net.ServerController;
 
+/**
+ * @author David Koettlitz
+ * <br>Erstellt am 07.08.2017
+ */
 public class MasterControlProgram implements Daemon, ServerController, Runnable {
    private static final Logger LOGGER = LoggerFactory.getLogger(MasterControlProgram.class);
 

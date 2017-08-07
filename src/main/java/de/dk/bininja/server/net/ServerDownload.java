@@ -24,6 +24,10 @@ import de.dk.bininja.net.packet.download.DownloadReadyPacket;
 import de.dk.bininja.net.packet.download.DownloadRequestPacket;
 import de.dk.util.channel.Channel;
 
+/**
+ * @author David Koettlitz
+ * <br>Erstellt am 07.08.2017
+ */
 public class ServerDownload extends Download {
    private static final Logger LOGGER = LoggerFactory.getLogger(ServerDownload.class);
 

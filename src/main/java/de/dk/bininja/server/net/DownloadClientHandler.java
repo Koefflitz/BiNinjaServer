@@ -16,6 +16,10 @@ import de.dk.util.channel.ChannelHandler;
 import de.dk.util.net.ConnectionListener;
 import de.dk.util.net.ReadingException;
 
+/**
+ * @author David Koettlitz
+ * <br>Erstellt am 07.08.2017
+ */
 public class DownloadClientHandler implements ClientHandler, ChannelHandler<DownloadPacket>, ConnectionListener {
    private static final Logger LOGGER = LoggerFactory.getLogger(DownloadClientHandler.class);
 

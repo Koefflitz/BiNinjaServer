@@ -3,6 +3,10 @@ package de.dk.bininja.server.controller;
 import de.dk.bininja.net.Base64Connection;
 import de.dk.bininja.server.net.DownloadClientHandler;
 
+/**
+ * @author David Koettlitz
+ * <br>Erstellt am 07.08.2017
+ */
 public class DownloadClientManager extends ClientManager<DownloadClientHandler> {
    private int bufferSize = Base64Connection.DEFAULT_BUFFER_SIZE;
 

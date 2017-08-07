@@ -7,6 +7,10 @@ import org.apache.commons.daemon.DaemonController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * @author David Koettlitz
+ * <br>Erstellt am 07.08.2017
+ */
 public class Controller implements DaemonController {
    private static final Logger LOGGER = LoggerFactory.getLogger(Controller.class);
 

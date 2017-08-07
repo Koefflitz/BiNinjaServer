@@ -10,6 +10,10 @@ import org.slf4j.LoggerFactory;
 import de.dk.util.net.ConnectionListener;
 import de.dk.util.net.ReadingException;
 
+/**
+ * @author David Koettlitz
+ * <br>Erstellt am 07.08.2017
+ */
 public class ClientManager<C extends ClientHandler> implements Iterable<C> {
    private static final Logger LOGGER = LoggerFactory.getLogger(ClientManager.class);
 

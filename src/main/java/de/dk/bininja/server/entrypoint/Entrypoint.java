@@ -8,6 +8,10 @@ import org.slf4j.LoggerFactory;
 
 import de.dk.bininja.server.controller.MasterControlProgram;
 
+/**
+ * @author David Koettlitz
+ * <br>Erstellt am 07.08.2017
+ */
 public class Entrypoint implements DaemonContext {
    private static final Logger LOGGER = LoggerFactory.getLogger(Entrypoint.class);
 

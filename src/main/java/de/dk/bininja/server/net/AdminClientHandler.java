@@ -22,6 +22,10 @@ import de.dk.util.net.ConnectionListener;
 import de.dk.util.net.ReadingException;
 import de.dk.util.net.Receiver;
 
+/**
+ * @author David Koettlitz
+ * <br>Erstellt am 07.08.2017
+ */
 public class AdminClientHandler implements ClientHandler, Receiver, ConnectionListener {
    private static final Logger LOGGER = LoggerFactory.getLogger(AdminClientHandler.class);
 

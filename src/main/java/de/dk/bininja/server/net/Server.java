@@ -19,6 +19,10 @@ import de.dk.bininja.server.controller.ClientManager;
 import de.dk.bininja.server.controller.DownloadClientManager;
 import de.dk.util.net.Connection;
 
+/**
+ * @author David Koettlitz
+ * <br>Erstellt am 07.08.2017
+ */
 public class Server implements ConnectionRequestHandler, AdminClientController {
    private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
 

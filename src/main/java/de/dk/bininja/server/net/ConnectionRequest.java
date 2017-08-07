@@ -11,6 +11,10 @@ import org.slf4j.LoggerFactory;
 import de.dk.bininja.net.Base64Connection;
 import de.dk.bininja.net.ConnectionType;
 
+/**
+ * @author David Koettlitz
+ * <br>Erstellt am 07.08.2017
+ */
 public class ConnectionRequest implements Resource {
    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionRequest.class);
 
