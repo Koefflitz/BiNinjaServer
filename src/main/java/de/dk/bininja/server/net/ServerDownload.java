@@ -98,7 +98,7 @@ public class ServerDownload extends Download {
          connection.connect();
          LOGGER.debug("URL-Connection to " + url + " successfully established");
       } catch (IOException e) {
-         LOGGER.debug("Could not establish connection to " + url);
+         LOGGER.debug("Could not establish connection to " + url, e);
          cancel(e.getMessage());
          return;
       }

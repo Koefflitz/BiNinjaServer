@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import de.dk.bininja.net.ConnectionDetails;
 import de.dk.bininja.net.ConnectionType;
+import de.dk.bininja.net.packet.ConnectionAnswerPacket;
 import de.dk.bininja.server.controller.AdminClientController;
 import de.dk.bininja.server.controller.ClientHandler;
 import de.dk.bininja.server.controller.ClientManager;
@@ -51,6 +52,7 @@ public class Server implements ConnectionRequestHandler, AdminClientController {
       try {
          adminClient = new AdminClientHandler(socket, this);
          adminClients.add(adminClient);
+         adminClient.getConnection().send(new ConnectionAnswerPacket(true));
          LOGGER.debug("New connection to admin client " + socket.getInetAddress() + " established.");
       } catch (IOException e) {
          failed(request, e);
@@ -65,6 +67,7 @@ public class Server implements ConnectionRequestHandler, AdminClientController {
       try {
          downloadClient = new DownloadClientHandler(socket);
          downloadClients.add(downloadClient);
+         downloadClient.getConnection().send(new ConnectionAnswerPacket(true));
          LOGGER.debug("New connection to download client " + socket.getInetAddress() + " established.");
       } catch (IOException e) {
          failed(request, e);
