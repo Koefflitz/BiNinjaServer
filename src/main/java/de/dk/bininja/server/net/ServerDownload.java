@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import de.dk.bininja.net.Base64Connection;
 import de.dk.bininja.net.Download;
+import de.dk.bininja.net.DownloadState;
 import de.dk.bininja.net.packet.download.DownloadCancelPacket;
 import de.dk.bininja.net.packet.download.DownloadCompletePacket;
 import de.dk.bininja.net.packet.download.DownloadDataPacket;
@@ -72,8 +73,10 @@ public class ServerDownload extends Download {
             channel.send(packet);
             written(readBytes);
          } catch (IOException e) {
-            LOGGER.error("Error while sending data to client", e);
-            cancel(e.getMessage());
+            if (getDownloadState() == RUNNING || getDownloadState() == DownloadState.LOADING_FINISHED) {
+               LOGGER.error("Error while sending data to client", e);
+               cancel(e.getMessage());
+            }
          }
       }
    }
@@ -105,17 +108,11 @@ public class ServerDownload extends Download {
       LOGGER.debug("Requesting meta information about the download");
       this.length = connection.getContentLengthLong();
 
-
-      //Only for testing!
-      //this.length = new File("C:\\Users\\e0073646\\e0073646.7z").length();
-      //Only for testing!
-
-
       String filename = null;
       try {
          filename = getFilename(connection);
       } catch (NoSuchFieldException e) {
-         // Nothing to do here
+         LOGGER.debug("Could not read filename from url", e);
       }
       LOGGER.debug("Meta information about the download received. Length of the download: " + getLength() + " bytes");
       LOGGER.debug("Telling the client the download metadata by sending a DownloadHeaderPacket");
