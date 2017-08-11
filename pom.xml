@@ -10,6 +10,24 @@
    </parent>
    <artifactId>bininja-server</artifactId>
    <name>BiNinjaServer</name>
+   <profiles>
+      <profile>
+         <id>no-entrypoint</id>
+         <build>
+            <plugins>
+               <plugin>
+                  <artifactId>maven-jar-plugin</artifactId>
+                  <configuration>
+                     <excludes>
+                        <exclude>**/entrypoint/**</exclude>
+                        <exclude>log4j2-test.xml</exclude>
+                     </excludes>
+                  </configuration>
+               </plugin>
+            </plugins>
+         </build>
+      </profile>
+   </profiles>
    <build>
       <plugins>
          <plugin>
@@ -20,6 +38,11 @@
                </descriptorRefs>
                <appendAssemblyId>false</appendAssemblyId>
                <finalName>BiNinja-Server</finalName>
+               <archive>
+                  <manifest>
+                     <mainClass>de.dk.bininja.server.entrypoint.Entrypoint</mainClass>
+                  </manifest>
+               </archive>
             </configuration>
             <executions>
                <execution>
@@ -30,14 +53,6 @@
                   </goals>
                </execution>
             </executions>
-         </plugin>
-         <plugin>
-            <artifactId>maven-jar-plugin</artifactId>
-            <configuration>
-               <excludes>
-                  <exclude>**/entrypoint/**</exclude>
-               </excludes>
-            </configuration>
          </plugin>
       </plugins>
    </build>
