@@ -130,19 +130,19 @@ public class Server implements ConnectionRequestHandler, AdminClientController {
                     .map(c -> getDetailsOf(c, type));
    }
 
-   @Override
-   public void shutdown() {
-      controller.shutdown();
-   }
-
    private ConnectionDetails getDetailsOf(Connection connection, ConnectionType type) {
       String host = connection.getInetAddress()
                               .getHostName();
 
       int port = connection.getSocket()
-                           .getPort();
+                           .getLocalPort();
 
       return new ConnectionDetails(host, port, type);
+   }
+
+   @Override
+   public void shutdown() {
+      controller.shutdown();
    }
 
    public synchronized void destroy() throws InterruptedException {
