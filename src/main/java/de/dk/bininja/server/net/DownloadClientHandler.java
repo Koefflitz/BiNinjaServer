@@ -27,7 +27,7 @@ public class DownloadClientHandler implements ClientHandler, ChannelHandler<Down
    public DownloadClientHandler(Base64Connection connection) throws IOException {
       this.connection = connection;
       connection.addListener(this);
-      connection.attachChannelManager(this);
+      connection.attachMultiplexer(this);
       connection.start();
    }
 
