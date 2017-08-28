@@ -1,7 +1,6 @@
 package de.dk.bininja.server.net;
 
 import java.io.IOException;
-import java.net.Socket;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +13,6 @@ import de.dk.util.channel.Channel;
 import de.dk.util.channel.ChannelDeclinedException;
 import de.dk.util.channel.ChannelHandler;
 import de.dk.util.net.ConnectionListener;
-import de.dk.util.net.ReadingException;
 
 /**
  * @author David Koettlitz
@@ -26,8 +24,8 @@ public class DownloadClientHandler implements ClientHandler, ChannelHandler<Down
    private final Base64Connection connection;
    private DownloadManager<ServerDownload> downloads = new DownloadManager<>();
 
-   public DownloadClientHandler(Socket socket) throws IOException {
-      this.connection = new Base64Connection(socket);
+   public DownloadClientHandler(Base64Connection connection) throws IOException {
+      this.connection = connection;
       connection.addListener(this);
       connection.attachChannelManager(this);
       connection.start();
@@ -40,11 +38,6 @@ public class DownloadClientHandler implements ClientHandler, ChannelHandler<Down
       ServerDownload download = new ServerDownload(downloadChannel);
       downloadChannel.addListener(download);
       downloads.add(download);
-   }
-
-   @Override
-   public void readingError(ReadingException e) {
-      LOGGER.warn("Something went wrong while reading from " + connection.getInetAddress(), e);
    }
 
    @Override
@@ -72,11 +65,11 @@ public class DownloadClientHandler implements ClientHandler, ChannelHandler<Down
 
    @Override
    public void destroy() {
-      if (connection.isRunning()) {
+      if (!connection.isClosed()) {
          try {
             connection.close();
          } catch (IOException e) {
-            LOGGER.warn("An exception occured while closing the connection to: " + connection.getInetAddress());
+            LOGGER.warn("An error occured while closing the connection to: " + connection.getInetAddress());
          }
       }
    }

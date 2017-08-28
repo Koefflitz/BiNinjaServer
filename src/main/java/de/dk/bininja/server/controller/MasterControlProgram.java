@@ -14,6 +14,8 @@ import org.slf4j.LoggerFactory;
 import de.dk.bininja.net.Base64Connection;
 import de.dk.bininja.server.net.Server;
 import de.dk.bininja.server.net.ServerController;
+import de.dk.bininja.server.opt.ParsedArguments;
+import de.dk.util.opt.ex.ArgumentParseException;
 
 /**
  * @author David Koettlitz
@@ -40,21 +42,14 @@ public class MasterControlProgram implements Daemon, ServerController, Runnable 
       LOGGER.debug("BiNinjaServer initializing...");
 
       LOGGER.debug("parsing arguments");
-      String[] args = context.getArguments();
-      int port;
-      if (args != null && args.length > 0) {
-         try {
-            port = Integer.parseInt(args[0]);
-            if (port < 0 || port > 0xffff)
-               throw new NumberFormatException("Port number " + port + " out of range.");
-         } catch (NumberFormatException e) {
-            String msg = "The first argument was not a valid port: " + args[0];
-            LOGGER.error(msg, e);
-            throw new DaemonInitException(msg, e);
-         }
-      } else {
-         port = Base64Connection.PORT;
+      ParsedArguments args;
+      try {
+         args = ParsedArguments.parse(context.getArguments());
+      } catch (ArgumentParseException e) {
+         e.printStackTrace();
+         throw new DaemonInitException("Error parsing command line arguments", e);
       }
+      int port = args.isPortSet() ? args.getPort() : Base64Connection.PORT;
 
       LOGGER.info("Initialising server socket on port " + port);
       try {
@@ -63,7 +58,11 @@ public class MasterControlProgram implements Daemon, ServerController, Runnable 
       } catch (IOException e) {
          throw new DaemonInitException("Could not initiate the server", e);
       }
-      this.server = new Server(this);
+      if (args.getSecurityArgs() != null)
+         this.server = new Server(this, args.getSecurityArgs().getKeys());
+      else
+         this.server = new Server(this, null);
+
       this.thread = new Thread(this);
    }
 

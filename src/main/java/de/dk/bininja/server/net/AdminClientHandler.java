@@ -1,7 +1,6 @@
 package de.dk.bininja.server.net;
 
 import java.io.IOException;
-import java.net.Socket;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +18,6 @@ import de.dk.bininja.server.controller.AdminClientController;
 import de.dk.bininja.server.controller.ClientHandler;
 import de.dk.util.net.Connection;
 import de.dk.util.net.ConnectionListener;
-import de.dk.util.net.ReadingException;
 import de.dk.util.net.Receiver;
 
 /**
@@ -32,16 +30,17 @@ public class AdminClientHandler implements ClientHandler, Receiver, ConnectionLi
    private final Base64Connection connection;
    private final AdminClientController controller;
 
-   public AdminClientHandler(Socket socket, AdminClientController controller) throws IOException {
-      this.connection = new Base64Connection(socket, this);
+   public AdminClientHandler(Base64Connection connection, AdminClientController controller) throws IOException {
+      this.connection = connection;
       this.controller = controller;
       connection.addListener(this);
+      connection.addReceiver(this);
       connection.start();
    }
 
    @Override
    public void receive(Object msg) throws IllegalArgumentException {
-      LOGGER.debug("Message recieved: " + msg);
+      LOGGER.debug("Message received: " + msg);
       if (!(msg instanceof AdminPacket))
          throw new IllegalArgumentException("The received message was no AdminPacket: " + msg);
 
@@ -139,11 +138,6 @@ public class AdminClientHandler implements ClientHandler, Receiver, ConnectionLi
    }
 
    @Override
-   public void readingError(ReadingException e) {
-      LOGGER.error("An error occured while reading from " + connection.getInetAddress(), e);
-   }
-
-   @Override
    public Connection getConnection() {
       return connection;
    }
@@ -153,16 +147,18 @@ public class AdminClientHandler implements ClientHandler, Receiver, ConnectionLi
       try {
          connection.close(timeout);
       } catch (IOException e) {
-         LOGGER.warn("An exception occured while closing the connection to: " + connection.getInetAddress());
+         LOGGER.warn("An error occured while closing the connection to: " + connection.getInetAddress());
       }
    }
 
    @Override
    public void destroy() {
-      try {
-         connection.close();
-      } catch (IOException e) {
-         LOGGER.warn("An exception occured while closing the connection to: " + connection.getInetAddress());
+      if (!connection.isClosed()) {
+         try {
+            connection.close();
+         } catch (IOException e) {
+            LOGGER.warn("An error occured while closing the connection to: " + connection.getInetAddress());
+         }
       }
    }
 }

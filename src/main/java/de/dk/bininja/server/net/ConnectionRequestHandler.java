@@ -1,14 +1,19 @@
 package de.dk.bininja.server.net;
 
 import java.io.IOException;
-import java.net.Socket;
+
+import javax.crypto.SecretKey;
+
+import de.dk.bininja.net.Base64Connection;
+import de.dk.util.net.security.SessionKeyArrangement;
 
 /**
  * @author David Koettlitz
  * <br>Erstellt am 07.08.2017
  */
 public interface ConnectionRequestHandler {
-   public void newAdminConnection(ConnectionRequest request, Socket socket);
-   public void newDownloadConnection(ConnectionRequest request, Socket socket);
-   public void failed(ConnectionRequest request, IOException e);
+   void newAdminConnection(ConnectionRequest request, Base64Connection connection);
+   void newDownloadConnection(ConnectionRequest request, Base64Connection connection);
+   SecretKey buildSecureCoder(SessionKeyArrangement builder) throws IOException;
+   void failed(ConnectionRequest request, IOException e);
 }

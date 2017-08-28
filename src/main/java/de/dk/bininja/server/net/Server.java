@@ -2,15 +2,20 @@ package de.dk.bininja.server.net;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.security.KeyPair;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.crypto.SecretKey;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.dk.bininja.net.Base64Connection;
 import de.dk.bininja.net.ConnectionDetails;
 import de.dk.bininja.net.ConnectionType;
 import de.dk.bininja.net.packet.ConnectionAnswerPacket;
@@ -19,6 +24,7 @@ import de.dk.bininja.server.controller.ClientHandler;
 import de.dk.bininja.server.controller.ClientManager;
 import de.dk.bininja.server.controller.DownloadClientManager;
 import de.dk.util.net.Connection;
+import de.dk.util.net.security.SessionKeyArrangement;
 
 /**
  * @author David Koettlitz
@@ -27,58 +33,80 @@ import de.dk.util.net.Connection;
 public class Server implements ConnectionRequestHandler, AdminClientController {
    private static final Logger LOGGER = LoggerFactory.getLogger(Server.class);
 
+   private final ServerController controller;
+   private final KeyPair keys;
+
    private final DownloadClientManager downloadClients = new DownloadClientManager();
    private final ClientManager<AdminClientHandler> adminClients = new ClientManager<>();
    private final Set<ConnectionRequest> requests = new HashSet<>();
 
-   private final ServerController controller;
-
-   public Server(ServerController controller) {
-      this.controller = controller;
+   public Server(ServerController controller, KeyPair keys) {
+      this.controller = Objects.requireNonNull(controller);
+      this.keys = keys;
    }
 
    public synchronized void newConnection(Socket socket) throws IOException {
       LOGGER.info("Establishing connection to client " + socket.getInetAddress());
-      ConnectionRequest request = new ConnectionRequest(socket, this);
+      ConnectionRequest request = new ConnectionRequest(new Base64Connection(socket), this);
       requests.add(request);
       request.establish();
    }
 
    @Override
-   public void newAdminConnection(ConnectionRequest request, Socket socket) {
-      LOGGER.debug("Establishing new admin client connection to " + socket.getInetAddress());
+   public void newAdminConnection(ConnectionRequest request, Base64Connection connection) {
+      LOGGER.debug("Establishing new admin client connection to " + connection.getInetAddress());
       requests.remove(request);
       AdminClientHandler adminClient;
       try {
-         adminClient = new AdminClientHandler(socket, this);
+         adminClient = new AdminClientHandler(connection, this);
          adminClients.add(adminClient);
          adminClient.getConnection().send(new ConnectionAnswerPacket(true));
-         LOGGER.debug("New connection to admin client " + socket.getInetAddress() + " established.");
+         LOGGER.debug("New connection to admin client " + connection.getInetAddress() + " established.");
       } catch (IOException e) {
          failed(request, e);
       }
    }
 
    @Override
-   public void newDownloadConnection(ConnectionRequest request, Socket socket) {
-      LOGGER.debug("Establishing new download client connection to " + socket.getInetAddress());
+   public void newDownloadConnection(ConnectionRequest request, Base64Connection connection) {
+      LOGGER.debug("Establishing new download client connection to " + connection.getInetAddress());
       requests.remove(request);
       DownloadClientHandler downloadClient;
       try {
-         downloadClient = new DownloadClientHandler(socket);
+         downloadClient = new DownloadClientHandler(connection);
          downloadClients.add(downloadClient);
          downloadClient.getConnection().send(new ConnectionAnswerPacket(true));
-         LOGGER.debug("New connection to download client " + socket.getInetAddress() + " established.");
+         LOGGER.debug("New connection to download client " + connection.getInetAddress() + " established.");
       } catch (IOException e) {
          failed(request, e);
       }
+   }
+
+   @Override
+   public SecretKey buildSecureCoder(SessionKeyArrangement builder) throws IOException {
+      if (keys == null)
+         throw new IOException("Secure connections not supported.");
+
+      return builder.setGenerateSessionKey(false)
+                    .setPublicKey(keys.getPublic())
+                    .setPrivateKey(keys.getPrivate())
+                    .arrange();
    }
 
    @Override
    public void failed(ConnectionRequest request, IOException e) {
+      String target = request.getConnection()
+                             .getInetAddress()
+                             .toString();
+
+      LOGGER.error("Could not establish connection to client " + target, e);
+      try {
+         request.getConnection().send(new ConnectionAnswerPacket(false, e.getMessage()));
+      } catch (IOException ex) {
+         LOGGER.warn("Could not send connection denial to " + target);
+      }
+      LOGGER.debug("Removing request from " + target);
       requests.remove(request);
-      LOGGER.error("Could not establish connection to download client " + request.getSocket().getInetAddress(), e);
-      LOGGER.debug("Removing request from " + request.getSocket().getInetAddress());
       request.destroy();
    }
 

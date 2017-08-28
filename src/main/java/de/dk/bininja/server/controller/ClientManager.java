@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.dk.util.net.ConnectionListener;
-import de.dk.util.net.ReadingException;
 
 /**
  * @author David Koettlitz
@@ -54,8 +53,5 @@ public class ClientManager<C extends ClientHandler> implements Iterable<C> {
          clients.remove(client);
          LOGGER.info("Client disconnected. " + clients.size() + " client connections remaining");
       }
-
-      @Override
-      public void readingError(ReadingException e) {}
    }
 }

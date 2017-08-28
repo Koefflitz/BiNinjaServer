@@ -1,15 +1,18 @@
 package de.dk.bininja.server.net;
 
 import java.io.IOException;
-import java.net.Socket;
-import java.util.NoSuchElementException;
-import java.util.Scanner;
+import java.security.GeneralSecurityException;
+
+import javax.crypto.SecretKey;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.dk.bininja.net.Base64Connection;
-import de.dk.bininja.net.ConnectionType;
+import de.dk.bininja.net.packet.ConnectionRequestPacket;
+import de.dk.util.net.Coder;
+import de.dk.util.net.security.CipherCoderAdapter;
+import de.dk.util.net.security.SessionKeyArrangement;
 
 /**
  * @author David Koettlitz
@@ -19,17 +22,13 @@ public class ConnectionRequest implements Resource {
    private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionRequest.class);
 
    private final ConnectionRequestHandler handler;
-   private final Socket socket;
+   private final Base64Connection connection;
    private final Thread thread;
 
-   private Scanner scanner;
-
-   public ConnectionRequest(Socket socket, ConnectionRequestHandler handler) throws IOException {
-      this.socket = socket;
+   public ConnectionRequest(Base64Connection connection, ConnectionRequestHandler handler) throws IOException {
+      this.connection = connection;
       this.handler = handler;
       this.thread = new Thread(this::run);
-      this.scanner = new Scanner(socket.getInputStream());
-      scanner.useDelimiter("\\" + Base64Connection.MSG_DELIMITER);
    }
 
    public void establish() {
@@ -37,79 +36,90 @@ public class ConnectionRequest implements Resource {
    }
 
    private void run() {
-      LOGGER.debug("Reading clients initial message to determine what type of client it is.");
-      ConnectionType type;
+      LOGGER.debug("Reading the initial message");
+      ConnectionRequestPacket packet;
       try {
-         type = readType(socket);
-         if (type == null)
-            return;
+         packet = (ConnectionRequestPacket) connection.readObject();
       } catch (IOException e) {
-         handler.failed(this, e);
+         handler.failed(this, new IOException("Failed to read initial message.", e));
          return;
       }
 
-      LOGGER.debug("Initial message from " + socket.getInetAddress() + " received: " + type);
+      LOGGER.debug("Initial message received: " + packet);
 
-      switch (type) {
+      if (packet.isSecure()) {
+         LOGGER.debug("Securing connection");
+         SessionKeyArrangement builder = new SessionKeyArrangement(connection, connection.getObjectOutput());
+         Coder secureCoder;
+         LOGGER.debug("Arranging the session key.");
+         try {
+            SecretKey sessionKey = handler.buildSecureCoder(builder);
+            secureCoder = new CipherCoderAdapter(sessionKey);
+         } catch (IOException e) {
+            handler.failed(this, e);
+            return;
+         } catch (GeneralSecurityException e) {
+            handler.failed(this, new IOException("Could not create coder.", e));
+            return;
+         }
+         connection.appendCoder(secureCoder);
+         LOGGER.debug("Session key arranged.");
+
+         LOGGER.debug("Reading the type of the client.");
+         try {
+            packet = (ConnectionRequestPacket) connection.readObject();
+         } catch (IOException e) {
+            handler.failed(this, new IOException("Could not read connection type.", e));
+         }
+      }
+
+      LOGGER.debug("Connection type received: " + packet.getConnectionType());
+      if (packet.getConnectionType() == null)
+         handler.failed(this, new IOException("No connection type specified."));
+
+      switch (packet.getConnectionType()) {
       case ADMIN:
-         handler.newAdminConnection(this, socket);
+         handler.newAdminConnection(this, connection);
          break;
       case CLIENT:
-         handler.newDownloadConnection(this, socket);
+         handler.newDownloadConnection(this, connection);
          break;
       case ALL:
-         handler.failed(this, new IOException("Could not establish connection of type " + type));
+         handler.failed(this, new IOException("Could not establish connection of type " + packet.getConnectionType()));
          break;
       }
 
-   }
-
-   private ConnectionType readType(Socket socket) throws IOException {
-      String initMsg;
-      try {
-         initMsg = scanner.next();
-      } catch (IllegalStateException | NoSuchElementException e) {
-         return null;
-      }
-      ConnectionType type = ConnectionType.parse(initMsg);
-      if (type != null)
-         return type;
-
-      throw new IOException("No valid initial verification message received: " + initMsg);
    }
 
    @Override
    public void close(long timeout) throws InterruptedException {
-      LOGGER.debug("Closing ConnectionRequest from " + socket.getInetAddress());
+      LOGGER.debug("Closing ConnectionRequest from " + connection.getInetAddress());
       destroy();
       if (thread != null && thread != Thread.currentThread())
          thread.join(timeout);
-      LOGGER.debug("ConnectionRequest from " + socket.getInetAddress() + " closed.");
+      LOGGER.debug("ConnectionRequest from " + connection.getInetAddress() + " closed.");
    }
 
    @Override
    public void destroy() {
-      if (scanner != null)
-         scanner.close();
-
-      if (!socket.isClosed()) {
+      if (!connection.isClosed()) {
          try {
-            socket.close();
-         } catch (IOException e) {
-            LOGGER.warn("An error occured while closing socket to " + socket.getInetAddress(), e);
+            connection.close(0);
+         } catch (IOException | InterruptedException e) {
+            LOGGER.error("An error occured while closing the connection.", e);
          }
       }
    }
 
-   public Socket getSocket() {
-      return socket;
+   public Base64Connection getConnection() {
+      return connection;
    }
 
    @Override
    public int hashCode() {
       final int prime = 31;
       int result = 1;
-      result = prime * result + ((this.socket == null) ? 0 : this.socket.getInetAddress().hashCode());
+      result = prime * result + ((this.connection == null) ? 0 : this.connection.getInetAddress().hashCode());
       return result;
    }
 
@@ -122,10 +132,10 @@ public class ConnectionRequest implements Resource {
       if (getClass() != obj.getClass())
          return false;
       ConnectionRequest other = (ConnectionRequest) obj;
-      if (this.socket == null) {
-         if (other.socket != null)
+      if (this.connection == null) {
+         if (other.connection != null)
             return false;
-      } else if (!this.socket.getInetAddress().equals(other.socket.getInetAddress()))
+      } else if (!this.connection.getInetAddress().equals(other.connection.getInetAddress()))
          return false;
       return true;
    }

@@ -3,6 +3,7 @@ package de.dk.bininja.server.entrypoint;
 import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
 import org.apache.commons.daemon.DaemonController;
+import org.apache.commons.daemon.DaemonInitException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +29,9 @@ public class Entrypoint implements DaemonContext {
       Entrypoint ctx = new Entrypoint(new Controller(daemon), args);
       try {
          daemon.init(ctx);
+      } catch (DaemonInitException e) {
+         LOGGER.error(e.getMessageWithCause(), e);
+         System.exit(1);
       } catch (Exception e) {
          LOGGER.error(e.getMessage(), e);
          System.exit(1);
