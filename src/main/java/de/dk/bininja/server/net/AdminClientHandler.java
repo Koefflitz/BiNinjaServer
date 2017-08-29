@@ -143,22 +143,15 @@ public class AdminClientHandler implements ClientHandler, Receiver, ConnectionLi
    }
 
    @Override
-   public void close(long timeout) throws InterruptedException {
-      try {
-         connection.close(timeout);
-      } catch (IOException e) {
-         LOGGER.warn("An error occured while closing the connection to: " + connection.getInetAddress());
-      }
+   public void close(long timeout) throws IOException, InterruptedException {
+      LOGGER.debug("Closing admin connection to " + connection.getInetAddress());
+      destroy(timeout);
+      LOGGER.debug("Admin connection to " + connection.getInetAddress() + " closed.");
    }
 
    @Override
-   public void destroy() {
-      if (!connection.isClosed()) {
-         try {
-            connection.close();
-         } catch (IOException e) {
-            LOGGER.warn("An error occured while closing the connection to: " + connection.getInetAddress());
-         }
-      }
+   public void destroy(long timeout) throws IOException, InterruptedException {
+      if (connection != null && !connection.isClosed())
+         connection.close(timeout);
    }
 }

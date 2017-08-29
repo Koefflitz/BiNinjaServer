@@ -1,6 +1,7 @@
 package de.dk.bininja.server.net;
 
 import java.io.IOException;
+import java.util.Objects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,21 +19,25 @@ import de.dk.util.net.ConnectionListener;
  * @author David Koettlitz
  * <br>Erstellt am 07.08.2017
  */
-public class DownloadClientHandler implements ClientHandler, ChannelHandler<DownloadPacket>, ConnectionListener {
+public class DownloadClientHandler implements ClientHandler,
+                                              ChannelHandler<DownloadPacket>,
+                                              ConnectionListener {
    private static final Logger LOGGER = LoggerFactory.getLogger(DownloadClientHandler.class);
 
    private final Base64Connection connection;
    private DownloadManager<ServerDownload> downloads = new DownloadManager<>();
 
-   public DownloadClientHandler(Base64Connection connection) throws IOException {
-      this.connection = connection;
+   public DownloadClientHandler(Base64Connection connection) throws IOException,
+                                                                    NullPointerException {
+      this.connection = Objects.requireNonNull(connection);
       connection.addListener(this);
       connection.attachMultiplexer(this);
       connection.start();
    }
 
    @Override
-   public void newChannelRequested(Channel<DownloadPacket> channel, DownloadPacket initialMsg) throws ChannelDeclinedException {
+   public void newChannelRequested(Channel<DownloadPacket> channel,
+                                   DownloadPacket initialMsg) throws ChannelDeclinedException {
       LOGGER.debug("A new channel is requested by the client.");
       Channel<DownloadPacket> downloadChannel = (Channel<DownloadPacket>) channel;
       ServerDownload download = new ServerDownload(downloadChannel);
@@ -46,32 +51,23 @@ public class DownloadClientHandler implements ClientHandler, ChannelHandler<Down
    }
 
    @Override
-   public synchronized void close(long timeout) throws InterruptedException {
+   public synchronized void close(long timeout) throws IOException, InterruptedException {
       LOGGER.debug("Breaking up with " + connection.getInetAddress());
 
       LOGGER.debug("Canceling downloads to " + connection.getInetAddress());
       for (ServerDownload download : downloads)
          download.cancel(null, timeout);
 
-      if (connection.isRunning()) {
+      if (!connection.isClosed()) {
          LOGGER.debug("Closing connection to " + connection.getInetAddress());
-         try {
-            connection.close(timeout);
-         } catch (IOException e) {
-            LOGGER.warn("An exception occured while closing the connection to " + connection.getInetAddress(), e);
-         }
+         connection.close(timeout);
       }
    }
 
    @Override
-   public void destroy() {
-      if (!connection.isClosed()) {
-         try {
-            connection.close();
-         } catch (IOException e) {
-            LOGGER.warn("An error occured while closing the connection to: " + connection.getInetAddress());
-         }
-      }
+   public void destroy(long timeout) throws IOException, InterruptedException {
+      if (!connection.isClosed())
+         connection.close(timeout);
    }
 
    @Override

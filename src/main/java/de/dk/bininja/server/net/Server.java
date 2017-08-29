@@ -105,9 +105,15 @@ public class Server implements ConnectionRequestHandler, AdminClientController {
       } catch (IOException ex) {
          LOGGER.warn("Could not send connection denial to " + target);
       }
-      LOGGER.debug("Removing request from " + target);
+      LOGGER.debug("Destroying connection request from " + target);
       requests.remove(request);
-      request.destroy();
+      try {
+         request.destroy(0);
+      } catch (IOException | InterruptedException ex) {
+         LOGGER.warn("Error destroying the connection request from "
+                     + request.getConnection().getInetAddress(),
+                     ex);
+      }
    }
 
    @Override
@@ -173,7 +179,7 @@ public class Server implements ConnectionRequestHandler, AdminClientController {
       controller.shutdown();
    }
 
-   public synchronized void destroy() throws InterruptedException {
+   public synchronized void destroy() throws InterruptedException, IOException {
       LOGGER.debug("Destroying all resources");
 
       InterruptedException e = null;
@@ -186,7 +192,7 @@ public class Server implements ConnectionRequestHandler, AdminClientController {
             }
          }
          if (e != null)
-            resource.destroy();
+            resource.destroy(0);
       }
 
       if (e != null)

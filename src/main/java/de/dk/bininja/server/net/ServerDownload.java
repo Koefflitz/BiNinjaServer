@@ -44,7 +44,8 @@ public class ServerDownload extends Download {
    @Override
    public void run() {
       if (connection == null) {
-         LOGGER.error("Could not begin to download because the connection was not established.");
+         LOGGER.error("Could not begin to download because "
+                      + "the url-connection was not established.");
          return;
       }
 
@@ -82,13 +83,13 @@ public class ServerDownload extends Download {
    }
 
    private void finished() {
+      LOGGER.info("Download complete");
       try {
          channel.send(new DownloadCompletePacket());
       } catch (IOException e) {
          LOGGER.warn("Could not send finish packet.", e);
       }
       setState(COMPLETE);
-      LOGGER.info("Download complete");
    }
 
    @Override
@@ -138,6 +139,8 @@ public class ServerDownload extends Download {
 
    @Override
    protected void ready(DownloadReadyPacket packet) {
+      LOGGER.debug("Client is ready: " + packet);
+      LOGGER.debug("Initialising the download.");
       start();
    }
 

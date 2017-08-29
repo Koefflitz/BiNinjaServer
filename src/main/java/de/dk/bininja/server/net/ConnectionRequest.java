@@ -2,6 +2,7 @@ package de.dk.bininja.server.net;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.util.Objects;
 
 import javax.crypto.SecretKey;
 
@@ -26,7 +27,7 @@ public class ConnectionRequest implements Resource {
    private final Thread thread;
 
    public ConnectionRequest(Base64Connection connection, ConnectionRequestHandler handler) throws IOException {
-      this.connection = connection;
+      this.connection = Objects.requireNonNull(connection);
       this.handler = handler;
       this.thread = new Thread(this::run);
    }
@@ -92,23 +93,19 @@ public class ConnectionRequest implements Resource {
    }
 
    @Override
-   public void close(long timeout) throws InterruptedException {
+   public void close(long timeout) throws IOException, InterruptedException {
       LOGGER.debug("Closing ConnectionRequest from " + connection.getInetAddress());
-      destroy();
-      if (thread != null && thread != Thread.currentThread())
-         thread.join(timeout);
+      destroy(timeout);
       LOGGER.debug("ConnectionRequest from " + connection.getInetAddress() + " closed.");
    }
 
    @Override
-   public void destroy() {
-      if (!connection.isClosed()) {
-         try {
-            connection.close(0);
-         } catch (IOException | InterruptedException e) {
-            LOGGER.error("An error occured while closing the connection.", e);
-         }
-      }
+   public void destroy(long timeout) throws IOException, InterruptedException {
+      if (!connection.isClosed())
+         connection.close(0);
+
+      if (thread != null && thread != Thread.currentThread())
+         thread.join(timeout);
    }
 
    public Base64Connection getConnection() {
