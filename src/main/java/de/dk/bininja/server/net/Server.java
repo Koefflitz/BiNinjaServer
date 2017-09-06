@@ -16,14 +16,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.dk.bininja.net.Base64Connection;
-import de.dk.bininja.net.ConnectionDetails;
+import de.dk.bininja.net.ConnectionMetadata;
 import de.dk.bininja.net.ConnectionType;
 import de.dk.bininja.net.packet.ConnectionAnswerPacket;
 import de.dk.bininja.server.controller.AdminClientController;
 import de.dk.bininja.server.controller.ClientHandler;
 import de.dk.bininja.server.controller.ClientManager;
 import de.dk.bininja.server.controller.DownloadClientManager;
-import de.dk.util.net.Connection;
 import de.dk.util.net.security.SessionKeyArrangement;
 
 /**
@@ -58,7 +57,7 @@ public class Server implements ConnectionRequestHandler, AdminClientController {
       requests.remove(request);
       AdminClientHandler adminClient;
       try {
-         adminClient = new AdminClientHandler(connection, this);
+         adminClient = new AdminClientHandler(connection, this, request.isSecure());
          adminClients.add(adminClient);
          adminClient.getConnection().send(new ConnectionAnswerPacket(true));
          LOGGER.debug("New connection to admin client " + connection.getInetAddress() + " established.");
@@ -71,11 +70,13 @@ public class Server implements ConnectionRequestHandler, AdminClientController {
    public void newDownloadConnection(ConnectionRequest request, Base64Connection connection) {
       LOGGER.debug("Establishing new download client connection to " + connection.getInetAddress());
       requests.remove(request);
-      DownloadClientHandler downloadClient;
+
       try {
-         downloadClient = new DownloadClientHandler(connection);
+         DownloadClientHandler downloadClient = new DownloadClientHandler(connection, request.isSecure());
+         downloadClient.getConnection()
+                       .send(new ConnectionAnswerPacket(true));
+
          downloadClients.add(downloadClient);
-         downloadClient.getConnection().send(new ConnectionAnswerPacket(true));
          LOGGER.debug("New connection to download client " + connection.getInetAddress() + " established.");
       } catch (IOException e) {
          failed(request, e);
@@ -101,7 +102,8 @@ public class Server implements ConnectionRequestHandler, AdminClientController {
 
       LOGGER.error("Could not establish connection to client " + target, e);
       try {
-         request.getConnection().send(new ConnectionAnswerPacket(false, e.getMessage()));
+         request.getConnection()
+                .send(new ConnectionAnswerPacket(false, e.getMessage()));
       } catch (IOException ex) {
          LOGGER.warn("Could not send connection denial to " + target);
       }
@@ -143,35 +145,25 @@ public class Server implements ConnectionRequestHandler, AdminClientController {
    }
 
    @Override
-   public Collection<ConnectionDetails> getConnectionDetailsOf(ConnectionType type) {
+   public Collection<ConnectionMetadata> getConnectionMetadataOf(ConnectionType type) {
       switch (type) {
       case ADMIN:
-         return buildConnectionDetailsOf(adminClients, type).collect(Collectors.toList());
+         return adminClients.getClients()
+                            .stream()
+                            .map(ClientHandler::getMetadata)
+                            .collect(Collectors.toList());
       case CLIENT:
-         return buildConnectionDetailsOf(downloadClients, type).collect(Collectors.toList());
+         return downloadClients.getClients()
+                               .stream()
+                               .map(ClientHandler::getMetadata)
+                               .collect(Collectors.toList());
       case ALL:
-         return Stream.concat(buildConnectionDetailsOf(adminClients, ConnectionType.ADMIN),
-                              buildConnectionDetailsOf(downloadClients, ConnectionType.CLIENT))
-                      .collect(Collectors.toList());
+         Stream<ClientHandler> s = Stream.concat(adminClients.getClients().stream(),
+                                                 downloadClients.getClients().stream());
+         return s.map(ClientHandler::getMetadata)
+                 .collect(Collectors.toList());
       }
       return null;
-   }
-
-   private Stream<ConnectionDetails> buildConnectionDetailsOf(ClientManager<? extends ClientHandler> manager, ConnectionType type) {
-      return manager.getClients()
-                    .stream()
-                    .map(ClientHandler::getConnection)
-                    .map(c -> getDetailsOf(c, type));
-   }
-
-   private ConnectionDetails getDetailsOf(Connection connection, ConnectionType type) {
-      String host = connection.getInetAddress()
-                              .getHostName();
-
-      int port = connection.getSocket()
-                           .getLocalPort();
-
-      return new ConnectionDetails(host, port, type);
    }
 
    @Override

@@ -6,10 +6,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.dk.bininja.net.Base64Connection;
+import de.dk.bininja.net.ConnectionMetadata;
+import de.dk.bininja.net.ConnectionType;
 import de.dk.bininja.net.packet.admin.AdminPacket;
 import de.dk.bininja.net.packet.admin.AdminPacket.AdminPacketType;
 import de.dk.bininja.net.packet.admin.BooleanAnswerPacket;
-import de.dk.bininja.net.packet.admin.ConnectionDetailsPacket;
+import de.dk.bininja.net.packet.admin.ConnectionMetaPacket;
 import de.dk.bininja.net.packet.admin.CountConnectionsPacket;
 import de.dk.bininja.net.packet.admin.CountConnectionsResultPacket;
 import de.dk.bininja.net.packet.admin.ReadBufferSizePacket;
@@ -30,12 +32,20 @@ public class AdminClientHandler implements ClientHandler, Receiver, ConnectionLi
    private final Base64Connection connection;
    private final AdminClientController controller;
 
-   public AdminClientHandler(Base64Connection connection, AdminClientController controller) throws IOException {
+   private boolean secure;
+
+   private final long timeStamp;
+
+   public AdminClientHandler(Base64Connection connection,
+                             AdminClientController controller,
+                             boolean secure) throws IOException {
       this.connection = connection;
       this.controller = controller;
+      this.secure = secure;
       connection.addListener(this);
       connection.addReceiver(this);
       connection.start();
+      this.timeStamp = System.currentTimeMillis();
    }
 
    @Override
@@ -50,7 +60,7 @@ public class AdminClientHandler implements ClientHandler, Receiver, ConnectionLi
          countConnections((CountConnectionsPacket) packet);
          break;
       case CONNECTION_DETAILS:
-         getConnectionDetails((ConnectionDetailsPacket) packet);
+         getConnectionMetadata((ConnectionMetaPacket) packet);
          break;
       case READ_BUFFER_SIZE:
          readBufferSize();
@@ -112,8 +122,8 @@ public class AdminClientHandler implements ClientHandler, Receiver, ConnectionLi
       }
    }
 
-   private void getConnectionDetails(ConnectionDetailsPacket packet) {
-      packet.setConnectionDetails(controller.getConnectionDetailsOf(packet.getConnectionType()));
+   private void getConnectionMetadata(ConnectionMetaPacket packet) {
+      packet.setConnectionMeta(controller.getConnectionMetadataOf(packet.getConnectionType()));
       LOGGER.debug("Sending answer of the connection details to " + connection.getInetAddress());
       try {
          connection.send(packet);
@@ -140,6 +150,23 @@ public class AdminClientHandler implements ClientHandler, Receiver, ConnectionLi
    @Override
    public Connection getConnection() {
       return connection;
+   }
+
+   @Override
+   public ConnectionMetadata getMetadata() {
+      String host = connection.getInetAddress()
+                              .toString();
+
+      int port = connection.getSocket()
+                           .getLocalPort();
+
+      return new ConnectionMetadata(host,
+                                    port,
+                                    ConnectionType.ADMIN,
+                                    secure,
+                                    timeStamp,
+                                    connection.getBytesSent(),
+                                    connection.getBytesReceived());
    }
 
    @Override

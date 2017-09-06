@@ -7,6 +7,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.dk.bininja.net.Base64Connection;
+import de.dk.bininja.net.ConnectionMetadata;
+import de.dk.bininja.net.ConnectionType;
 import de.dk.bininja.net.DownloadManager;
 import de.dk.bininja.net.packet.download.DownloadPacket;
 import de.dk.bininja.server.controller.ClientHandler;
@@ -27,12 +29,18 @@ public class DownloadClientHandler implements ClientHandler,
    private final Base64Connection connection;
    private DownloadManager<ServerDownload> downloads = new DownloadManager<>();
 
-   public DownloadClientHandler(Base64Connection connection) throws IOException,
-                                                                    NullPointerException {
+   private boolean secure;
+   private final long timeStamp;
+
+   public DownloadClientHandler(Base64Connection connection,
+                                boolean secure) throws IOException,
+                                                       NullPointerException {
       this.connection = Objects.requireNonNull(connection);
+      this.secure = secure;
       connection.addListener(this);
       connection.attachMultiplexer(this);
       connection.start();
+      this.timeStamp = System.currentTimeMillis();
    }
 
    @Override
@@ -73,6 +81,23 @@ public class DownloadClientHandler implements ClientHandler,
    @Override
    public Base64Connection getConnection() {
       return connection;
+   }
+
+   @Override
+   public ConnectionMetadata getMetadata() {
+      String host = connection.getInetAddress()
+                              .toString();
+
+      int port = connection.getSocket()
+                           .getLocalPort();
+
+      return new ConnectionMetadata(host,
+                                    port,
+                                    ConnectionType.CLIENT,
+                                    secure,
+                                    timeStamp,
+                                    connection.getBytesSent(),
+                                    connection.getBytesReceived());
    }
 
    @Override

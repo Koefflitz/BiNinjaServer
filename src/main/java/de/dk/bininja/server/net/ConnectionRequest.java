@@ -24,6 +24,7 @@ public class ConnectionRequest implements Resource {
 
    private final ConnectionRequestHandler handler;
    private final Base64Connection connection;
+   private boolean secure;
    private final Thread thread;
 
    public ConnectionRequest(Base64Connection connection, ConnectionRequestHandler handler) throws IOException {
@@ -48,7 +49,8 @@ public class ConnectionRequest implements Resource {
 
       LOGGER.debug("Initial message received: " + packet);
 
-      if (packet.isSecure()) {
+      this.secure = packet.isSecure();
+      if (secure) {
          LOGGER.debug("Securing connection");
          SessionKeyArrangement builder = new SessionKeyArrangement(connection, connection.getObjectOutput());
          Coder secureCoder;
@@ -110,6 +112,10 @@ public class ConnectionRequest implements Resource {
 
    public Base64Connection getConnection() {
       return connection;
+   }
+
+   public boolean isSecure() {
+      return secure;
    }
 
    @Override
