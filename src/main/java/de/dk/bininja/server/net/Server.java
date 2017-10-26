@@ -53,14 +53,14 @@ public class Server implements ConnectionRequestHandler, AdminClientController {
 
    @Override
    public void newAdminConnection(ConnectionRequest request, Base64Connection connection) {
-      LOGGER.debug("Establishing new admin client connection to " + connection.getInetAddress());
+      LOGGER.debug("Establishing new admin client connection to " + connection.getAddress());
       requests.remove(request);
       AdminClientHandler adminClient;
       try {
          adminClient = new AdminClientHandler(connection, this, request.isSecure());
          adminClients.add(adminClient);
          adminClient.getConnection().send(new ConnectionAnswerPacket(true));
-         LOGGER.debug("New connection to admin client " + connection.getInetAddress() + " established.");
+         LOGGER.debug("New connection to admin client " + connection.getAddress() + " established.");
       } catch (IOException e) {
          failed(request, e);
       }
@@ -68,7 +68,7 @@ public class Server implements ConnectionRequestHandler, AdminClientController {
 
    @Override
    public void newDownloadConnection(ConnectionRequest request, Base64Connection connection) {
-      LOGGER.debug("Establishing new download client connection to " + connection.getInetAddress());
+      LOGGER.debug("Establishing new download client connection to " + connection.getAddress());
       requests.remove(request);
 
       try {
@@ -77,7 +77,7 @@ public class Server implements ConnectionRequestHandler, AdminClientController {
                        .send(new ConnectionAnswerPacket(true));
 
          downloadClients.add(downloadClient);
-         LOGGER.debug("New connection to download client " + connection.getInetAddress() + " established.");
+         LOGGER.debug("New connection to download client " + connection.getAddress() + " established.");
       } catch (IOException e) {
          failed(request, e);
       }
@@ -97,7 +97,7 @@ public class Server implements ConnectionRequestHandler, AdminClientController {
    @Override
    public void failed(ConnectionRequest request, IOException e) {
       String target = request.getConnection()
-                             .getInetAddress()
+                             .getAddress()
                              .toString();
 
       LOGGER.error("Could not establish connection to client " + target, e);
@@ -113,7 +113,7 @@ public class Server implements ConnectionRequestHandler, AdminClientController {
          request.destroy(0);
       } catch (IOException | InterruptedException ex) {
          LOGGER.warn("Error destroying the connection request from "
-                     + request.getConnection().getInetAddress(),
+                     + request.getConnection().getAddress(),
                      ex);
       }
    }

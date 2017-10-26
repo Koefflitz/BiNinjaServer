@@ -76,12 +76,12 @@ public class AdminClientHandler implements ClientHandler, Receiver, ConnectionLi
 
    private void setBufferSize(SetBufferSizePacket packet) {
       controller.setBufferSize(packet.getBufferSize());
-      LOGGER.debug("Sending answer that buffer size was set to " + connection.getInetAddress());
+      LOGGER.debug("Sending answer that buffer size was set to " + connection.getAddress());
       try {
          connection.send(new BooleanAnswerPacket(AdminPacketType.SET_BUFFER_SIZE, true));
       } catch (IOException e) {
          String msg = String.format("Could not send answer to %s, that the buffer size was set to %s",
-                                    connection.getInetAddress(),
+                                    connection.getAddress(),
                                     packet.getBufferSize());
          LOGGER.error(msg, e);
       }
@@ -89,11 +89,11 @@ public class AdminClientHandler implements ClientHandler, Receiver, ConnectionLi
 
    private void readBufferSize() {
       int bufferSize = controller.readBufferSize();
-      LOGGER.debug("Sending answer of the buffer size to " + connection.getInetAddress());
+      LOGGER.debug("Sending answer of the buffer size to " + connection.getAddress());
       try {
          connection.send(new ReadBufferSizePacket(bufferSize));
       } catch (IOException e) {
-         LOGGER.error("Could not send answer for readBufferSize to admin client " + connection.getInetAddress());
+         LOGGER.error("Could not send answer for readBufferSize to admin client " + connection.getAddress());
       }
    }
 
@@ -114,37 +114,37 @@ public class AdminClientHandler implements ClientHandler, Receiver, ConnectionLi
          return;
       }
 
-      LOGGER.debug("Sending answer of the connection count to " + connection.getInetAddress());
+      LOGGER.debug("Sending answer of the connection count to " + connection.getAddress());
       try {
          connection.send(new CountConnectionsResultPacket(count));
       } catch (IOException e) {
-         LOGGER.error("Could not send answer for countConnections to admin client " + connection.getInetAddress());
+         LOGGER.error("Could not send answer for countConnections to admin client " + connection.getAddress());
       }
    }
 
    private void getConnectionMetadata(ConnectionMetaPacket packet) {
       packet.setConnectionMeta(controller.getConnectionMetadataOf(packet.getConnectionType()));
-      LOGGER.debug("Sending answer of the connection details to " + connection.getInetAddress());
+      LOGGER.debug("Sending answer of the connection details to " + connection.getAddress());
       try {
          connection.send(packet);
       } catch (IOException e) {
-         LOGGER.error("Could not send answer for readConnectionDetails to admin client " + connection.getInetAddress(), e);
+         LOGGER.error("Could not send answer for readConnectionDetails to admin client " + connection.getAddress(), e);
       }
    }
 
    private void shutdown() {
-      LOGGER.debug("Sending answer that Im shutting down to " + connection.getInetAddress());
+      LOGGER.debug("Sending answer that Im shutting down to " + connection.getAddress());
       try {
          connection.send(new BooleanAnswerPacket(AdminPacketType.SHUTDOWN, true));
       } catch (IOException e) {
-         LOGGER.error("Could not send answer that shutdown is innitiated to admin client " + connection.getInetAddress());
+         LOGGER.error("Could not send answer that shutdown is innitiated to admin client " + connection.getAddress());
       }
       controller.shutdown();
    }
 
    @Override
-   public void closed() {
-      LOGGER.debug("Connection to admin client " + connection.getInetAddress() + " closed.");
+   public void closed(Connection connection) {
+      LOGGER.debug("Connection to admin client " + connection.getAddress() + " closed.");
    }
 
    @Override
@@ -154,7 +154,7 @@ public class AdminClientHandler implements ClientHandler, Receiver, ConnectionLi
 
    @Override
    public ConnectionMetadata getMetadata() {
-      String host = connection.getInetAddress()
+      String host = connection.getAddress()
                               .toString();
 
       int port = connection.getSocket()
@@ -171,9 +171,9 @@ public class AdminClientHandler implements ClientHandler, Receiver, ConnectionLi
 
    @Override
    public void close(long timeout) throws IOException, InterruptedException {
-      LOGGER.debug("Closing admin connection to " + connection.getInetAddress());
+      LOGGER.debug("Closing admin connection to " + connection.getAddress());
       destroy(timeout);
-      LOGGER.debug("Admin connection to " + connection.getInetAddress() + " closed.");
+      LOGGER.debug("Admin connection to " + connection.getAddress() + " closed.");
    }
 
    @Override

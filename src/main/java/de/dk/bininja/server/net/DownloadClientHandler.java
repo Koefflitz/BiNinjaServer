@@ -2,6 +2,7 @@ package de.dk.bininja.server.net;
 
 import java.io.IOException;
 import java.util.Objects;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +16,7 @@ import de.dk.bininja.server.controller.ClientHandler;
 import de.dk.util.channel.Channel;
 import de.dk.util.channel.ChannelDeclinedException;
 import de.dk.util.channel.ChannelHandler;
+import de.dk.util.net.Connection;
 import de.dk.util.net.ConnectionListener;
 
 /**
@@ -45,7 +47,7 @@ public class DownloadClientHandler implements ClientHandler,
 
    @Override
    public void newChannelRequested(Channel<DownloadPacket> channel,
-                                   DownloadPacket initialMsg) throws ChannelDeclinedException {
+                                   Optional<DownloadPacket> initialMsg) throws ChannelDeclinedException {
       LOGGER.debug("A new channel is requested by the client.");
       Channel<DownloadPacket> downloadChannel = (Channel<DownloadPacket>) channel;
       ServerDownload download = new ServerDownload(downloadChannel);
@@ -54,20 +56,20 @@ public class DownloadClientHandler implements ClientHandler,
    }
 
    @Override
-   public void closed() {
-      LOGGER.debug("Connection to download client " + connection.getInetAddress() + " closed.");
+   public void closed(Connection connection) {
+      LOGGER.debug("Connection to download client " + connection.getAddress() + " closed.");
    }
 
    @Override
    public synchronized void close(long timeout) throws IOException, InterruptedException {
-      LOGGER.debug("Breaking up with " + connection.getInetAddress());
+      LOGGER.debug("Breaking up with " + connection.getAddress());
 
-      LOGGER.debug("Canceling downloads to " + connection.getInetAddress());
+      LOGGER.debug("Canceling downloads to " + connection.getAddress());
       for (ServerDownload download : downloads)
          download.cancel(null, timeout);
 
       if (!connection.isClosed()) {
-         LOGGER.debug("Closing connection to " + connection.getInetAddress());
+         LOGGER.debug("Closing connection to " + connection.getAddress());
          connection.close(timeout);
       }
    }
@@ -85,7 +87,7 @@ public class DownloadClientHandler implements ClientHandler,
 
    @Override
    public ConnectionMetadata getMetadata() {
-      String host = connection.getInetAddress()
+      String host = connection.getAddress()
                               .toString();
 
       int port = connection.getSocket()

@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.dk.util.net.Connection;
 import de.dk.util.net.ConnectionListener;
 
 /**
@@ -49,7 +50,7 @@ public class ClientManager<C extends ClientHandler> implements Iterable<C> {
       }
 
       @Override
-      public void closed() {
+      public void closed(Connection connection) {
          clients.remove(client);
          LOGGER.info("Client disconnected. " + clients.size() + " client connections remaining");
       }

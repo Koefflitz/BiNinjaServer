@@ -96,9 +96,9 @@ public class ConnectionRequest implements Resource {
 
    @Override
    public void close(long timeout) throws IOException, InterruptedException {
-      LOGGER.debug("Closing ConnectionRequest from " + connection.getInetAddress());
+      LOGGER.debug("Closing ConnectionRequest from " + connection.getAddress());
       destroy(timeout);
-      LOGGER.debug("ConnectionRequest from " + connection.getInetAddress() + " closed.");
+      LOGGER.debug("ConnectionRequest from " + connection.getAddress() + " closed.");
    }
 
    @Override
@@ -122,7 +122,7 @@ public class ConnectionRequest implements Resource {
    public int hashCode() {
       final int prime = 31;
       int result = 1;
-      result = prime * result + ((this.connection == null) ? 0 : this.connection.getInetAddress().hashCode());
+      result = prime * result + ((this.connection == null) ? 0 : this.connection.getAddress().hashCode());
       return result;
    }
 
@@ -138,7 +138,7 @@ public class ConnectionRequest implements Resource {
       if (this.connection == null) {
          if (other.connection != null)
             return false;
-      } else if (!this.connection.getInetAddress().equals(other.connection.getInetAddress()))
+      } else if (!this.connection.getAddress().equals(other.connection.getAddress()))
          return false;
       return true;
    }
