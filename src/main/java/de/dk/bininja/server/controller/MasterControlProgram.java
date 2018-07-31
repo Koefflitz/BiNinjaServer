@@ -15,7 +15,7 @@ import de.dk.bininja.net.Base64Connection;
 import de.dk.bininja.server.net.Server;
 import de.dk.bininja.server.net.ServerController;
 import de.dk.bininja.server.opt.ParsedArguments;
-import de.dk.util.opt.ex.ArgumentParseException;
+import de.dk.opt.ex.ArgumentParseException;
 
 /**
  * @author David Koettlitz

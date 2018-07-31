@@ -18,9 +18,9 @@ import de.dk.bininja.net.packet.admin.ReadBufferSizePacket;
 import de.dk.bininja.net.packet.admin.SetBufferSizePacket;
 import de.dk.bininja.server.controller.AdminClientController;
 import de.dk.bininja.server.controller.ClientHandler;
+import de.dk.ch.Receiver;
 import de.dk.util.net.Connection;
 import de.dk.util.net.ConnectionListener;
-import de.dk.util.net.Receiver;
 
 /**
  * @author David Koettlitz

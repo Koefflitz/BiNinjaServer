@@ -4,10 +4,10 @@ import java.io.IOException;
 
 import de.dk.bininja.InvalidArgumentException;
 import de.dk.bininja.opt.ParsedSecurityArguments;
-import de.dk.util.opt.ArgumentModel;
-import de.dk.util.opt.ArgumentParser;
-import de.dk.util.opt.ArgumentParserBuilder;
-import de.dk.util.opt.ex.ArgumentParseException;
+import de.dk.opt.ArgumentModel;
+import de.dk.opt.ArgumentParser;
+import de.dk.opt.ArgumentParserBuilder;
+import de.dk.opt.ex.ArgumentParseException;
 
 public class ParsedArguments {
    private ParsedSecurityArguments securityArgs;

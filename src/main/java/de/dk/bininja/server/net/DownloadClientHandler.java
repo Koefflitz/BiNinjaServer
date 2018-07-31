@@ -13,9 +13,9 @@ import de.dk.bininja.net.ConnectionType;
 import de.dk.bininja.net.DownloadManager;
 import de.dk.bininja.net.packet.download.DownloadPacket;
 import de.dk.bininja.server.controller.ClientHandler;
-import de.dk.util.channel.Channel;
-import de.dk.util.channel.ChannelDeclinedException;
-import de.dk.util.channel.ChannelHandler;
+import de.dk.ch.Channel;
+import de.dk.ch.ChannelDeclinedException;
+import de.dk.ch.ChannelHandler;
 import de.dk.util.net.Connection;
 import de.dk.util.net.ConnectionListener;
 
