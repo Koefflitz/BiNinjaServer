@@ -23,6 +23,10 @@ public class ParsedArguments {
       ParsedSecurityArguments.build(builder);
 
       ArgumentParser parser = builder.buildAndGet();
+      if (parser.isHelp(args)) {
+         parser.printUsage(System.out);
+         System.exit(0);
+      }
       ArgumentModel result = parser.parseArguments(args);
 
       ParsedArguments parsedArgs = new ParsedArguments();
